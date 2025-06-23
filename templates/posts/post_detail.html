@@ -1,14 +1,20 @@
-{% extends 'base.html'%}
-
+{% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="card" style="width: 18rem; margin-top: 20px;">
-  <img src="..." class="card-img-top" alt="...">
-  <div class="card-body">
-    <h5 class="card-title">{{post.title}}</h5>
-    <p class="card-text">{{post.content}}</p>
-    <p class="card-text">Posted on {{post.created_at}}</p>
-    <a href="#" class="btn btn-primary">Go somewhere</a>
+<div class="container mt-5">
+  <div class="card mx-auto" style="width: 24rem;">
+    {% if post.image %}
+      <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+    {% else %}
+      <img src="{% static 'placeholder.jpg' %}" class="card-img-top" alt="No image">
+    {% endif %}
+    <div class="card-body">
+      <h5 class="card-title">{{ post.title }}</h5>
+      <p class="card-text">{{ post.content }}</p>
+      <p class="card-text"><small class="text-muted">Posted on {{ post.created_at }}</small></p>
+      <a href="{% url 'posts_list_view' %}" class="btn btn-secondary">← Back to posts</a>
+    </div>
   </div>
 </div>
 {% endblock %}
