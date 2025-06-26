@@ -94,3 +94,4 @@ def post_create_model_form(request):
         else:
             # Форма невалидна, отображаем ее снова с ошибками
             return render(request, "posts/post_create_model_form.html", {"form": form})        
+        

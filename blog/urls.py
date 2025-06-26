@@ -16,11 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from posts.views import homepage_view, test_view, posts_list_view
+from posts.views import homepage_view, test_view, posts_list_view 
+from users.views import register_view, login_view, logout_view
 from django.conf.urls.static import static
 from django.conf import settings
-from posts import views
+from users import views as user_views
+from posts import views  # ✅ добавлен импорт для доступа к views.post_detail_view и post_create_view
 
+users_urls = [
+    path('register/', user_views.register_view, name='register_view'),
+    path('login/', user_views.login_view, name='login_view'),
+    path('logout/', user_views.logout_view, name='logout_view'),
+]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,6 +35,6 @@ urlpatterns = [
     path('test/', test_view, name='test_view'),
     path('posts/', posts_list_view, name='posts_list_view'),
     path('posts/<int:post_id>/', views.post_detail_view, name='post_detail_view'),
-    # path('posts/<int:pk>/', views.post_detail_view, name='post_detail_view'),
     path('posts/create/', views.post_create_view, name='post_create_view'),
-]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] 
+urlpatterns += users_urls + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
