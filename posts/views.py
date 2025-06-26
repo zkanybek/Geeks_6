@@ -1,19 +1,16 @@
 from django.shortcuts import render, HttpResponse
 import random
-from posts.models import Post
+from posts.models import Post, Category, Tag 
 from posts.forms import PostForm, PostForm2, PostBaseForm, PostModelForm
-
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required 
 def test_view(request):
     return HttpResponse(f'hello, this is a test view, {random.randint(1, 100)}')
 
 def homepage_view(request):
     if request.method == "GET":
         return render(request, 'base.html')
-
-def posts_list_view(request):
-    if request.method == "GET":
-        posts = Post.objects.all()
-        return render(request, "posts/posts_list.html", context={"posts": posts})    
 
 def post_detail_view(request, post_id):
     if request.method == "GET":
@@ -42,23 +39,7 @@ def post_create_view(request):
 
         else:
             return render(request, "posts/post_create.html", context={"form": form})
-
-        # data = request.POST
-        # files = request.FILES
-        # image = files.get("image")
-        # title_data = data.get("title")
-        # continue_data = data.get("content")
-        # post = Post.objects.create(image=image, title=title_data, content=continue_data)
-
-        # return HttpResponse("Post request received")
-  
-    # elif request.method == "POST":
-    #     title = request.POST.get("title")
-    #     content = request.POST.get("content")
-    #     image = request.FILES.get("image")
-    #     post = Post.objects.create(title=title, content=content, image=image)
-    #     return HttpResponse(f"Post created with id: {post.id}")
-
+        
 def post_create_forms_form(request):
     if request.method == "GET":
         form = PostBaseForm() 
@@ -80,7 +61,7 @@ def post_create_forms_form(request):
         
 def post_create_model_form(request):
     if request.method == "GET":
-        form = PostModelForm() # Создаем пустую форму, привязанную к модели
+        form = PostModelForm() 
         return render(request, "posts/post_create_model_form.html", {"form": form})
     
     elif request.method == "POST":
@@ -95,3 +76,52 @@ def post_create_model_form(request):
             # Форма невалидна, отображаем ее снова с ошибками
             return render(request, "posts/post_create_model_form.html", {"form": form})        
         
+@login_required
+def posts_list_view(request):
+    posts = Post.objects.all()
+
+    # --- Поиск ---
+    query = request.GET.get('q')
+    if query:
+        posts = posts.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query)
+    )
+
+
+    # --- Фильтрация ---
+    category_id = request.GET.get('category')
+    if category_id:
+        posts = posts.filter(category_id=category_id)
+
+    tag_id = request.GET.get('tag')
+    if tag_id:
+        posts = posts.filter(tags__id=tag_id)
+
+    # --- Сортировка ---
+    sort = request.GET.get('sort')
+    if sort == 'title':
+        posts = posts.order_by('title')
+    elif sort == 'new':
+        posts = posts.order_by('-created_at')
+    elif sort == 'old':
+        posts = posts.order_by('created_at')
+
+    # --- Пагинация ---
+    paginator = Paginator(posts, 5)  # 5 постов на страницу
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    categories = Category.objects.all()
+    tags = Tag.objects.all()
+
+    context = {
+        'page_obj': page_obj,
+        'categories': categories,
+        'tags': tags,
+        'query': query,
+        'current_category': category_id,
+        'current_tag': tag_id,
+        'current_sort': sort,
+    }
+    return render(request, 'posts/posts_list.html', context)
